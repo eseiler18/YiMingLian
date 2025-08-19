@@ -1,9 +1,9 @@
 ## 🗺️ Roadmap de développement - Application d’apprentissage du chinois
 
 ### 🎯 MVP (Version minimale viable)
-- [*] **Choix du vocabulaire** (sélection HSK1, HSK2, HSK3…)
-- [*] **Mode rapide** : affichage caractère → réponse (pinyin + français) → bouton *suivant*
-- [*] **Filtrage par lettre** dans le mode rapide
+- [x] **Choix du vocabulaire** (sélection HSK1, HSK2, HSK3…)
+- [x] **Mode rapide** : affichage caractère → réponse (pinyin + français) → bouton *suivant*
+- [x] **Filtrage par lettre** dans le mode rapide
 - [ ] **Mode choix du caractère** : mot (pinyin/français) → 4 choix de caractères → feedback visuel
 - [ ] **Mode choix du pinyin/français** : caractère → 4 choix de réponses (pinyin/français) → feedback visuel
 
