@@ -7,7 +7,6 @@
 - [ ] **Mode choix du caractère** : mot (pinyin/français) → 4 choix de caractères → feedback visuel
 - [ ] **Mode choix du pinyin/français** : caractère → 4 choix de réponses (pinyin/français) → feedback visuel
 
-
 ### 🆙 V1 (Améliorations importantes)
 - [ ] **Paramètres d’affichage** (afficher uniquement pinyin, uniquement français ou les deux)
 - [ ] **Design & UI améliorée** (couleurs, transitions, lisibilité)
