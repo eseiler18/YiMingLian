@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 import '../services/vocabulary_service.dart';
 import '../models/character.dart';
-import 'dart:math';
+import '../widgets/character_display.dart';
+import '../widgets/letter_filter_sheet.dart';
 
 class FastModeScreen extends StatefulWidget {
   const FastModeScreen({super.key});
@@ -16,11 +18,11 @@ class _FastModeScreenState extends State<FastModeScreen> {
   List<Character> filteredVocabulary = [];
   Character? currentChar;
   bool showAnswer = false;
-  String? selectedLetter;
 
   final VocabularyService service = VocabularyService();
   final Random random = Random();
   List<String> availableLetters = [];
+  Set<String> selectedLetters = {};
 
   @override
   void initState() {
@@ -33,7 +35,6 @@ class _FastModeScreenState extends State<FastModeScreen> {
 
   Future<void> _loadVocabulary() async {
     final vocab = await service.loadVocabulary(hskFile);
-
     setState(() {
       vocabulary = vocab;
       filteredVocabulary = List.from(vocabulary);
@@ -44,22 +45,39 @@ class _FastModeScreenState extends State<FastModeScreen> {
 
   void _nextCharacter() {
     if (filteredVocabulary.isNotEmpty) {
+      double totalWeight = filteredVocabulary.fold(0.0, (sum, c) => sum + c.weight);
+      double r = random.nextDouble() * totalWeight;
+      double accum = 0;
+      Character selected = filteredVocabulary.first;
+
+      for (var c in filteredVocabulary) {
+        accum += c.weight;
+        if (r <= accum) {
+          selected = c;
+          break;
+        }
+      }
+
       setState(() {
-        currentChar =
-        filteredVocabulary[random.nextInt(filteredVocabulary.length)];
+        currentChar = selected;
         showAnswer = false;
+        selected.weight *= 0.05; // réduire son poids pour qu’il ait moins de chance
       });
     }
   }
 
   void _revealAnswer() => setState(() => showAnswer = true);
 
-  void _filterByLetter(String? letter) {
+  void _applyFilter() {
     setState(() {
-      selectedLetter = letter;
-      filteredVocabulary = (letter == null)
-          ? List.from(vocabulary)
-          : service.filterByLetter(vocabulary, letter);
+      if (selectedLetters.isEmpty) {
+        filteredVocabulary = List.from(vocabulary);
+      } else {
+        filteredVocabulary = vocabulary
+            .where((c) => selectedLetters.any(
+                (letter) => c.pinyin.toLowerCase().startsWith(letter)))
+            .toList();
+      }
       _nextCharacter();
     });
   }
@@ -71,54 +89,16 @@ class _FastModeScreenState extends State<FastModeScreen> {
   }
 
   void _showLetterFilterSheet() {
-    showModalBottomSheet(
+    showLetterFilterSheet(
       context: context,
-      builder: (_) {
-        return Padding(
-          padding: const EdgeInsets.all(12.0),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              // Bouton "Tous"
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  _filterByLetter(null);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: selectedLetter == null ? Colors.blue : null,
-                  minimumSize: const Size(60, 60),
-                ),
-                child: const Text("Tous"),
-              ),
-              ...availableLetters.map((letter) {
-                final count = _countCharsForLetter(letter);
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _filterByLetter(letter);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                        selectedLetter == letter ? Colors.blue : null,
-                        minimumSize: const Size(60, 60),
-                      ),
-                      child: Text(letter.toUpperCase()),
-                    ),
-                    Text(
-                      "$count",
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                  ],
-                );
-              }).toList(),
-            ],
-          ),
-        );
+      availableLetters: availableLetters,
+      selectedLetters: selectedLetters,
+      countCharsForLetter: _countCharsForLetter,
+      onSelectionChanged: (letters) {
+        setState(() {
+          selectedLetters = letters;
+        });
+        _applyFilter();
       },
     );
   }
@@ -143,48 +123,11 @@ class _FastModeScreenState extends State<FastModeScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Caractère
-            Text(
-              currentChar!.char,
-              style: const TextStyle(
-                fontSize: 200,
-                fontWeight: FontWeight.w300,
-              ),
+            CharacterDisplay(
+              character: currentChar!,
+              showAnswer: showAnswer,
             ),
-
             const SizedBox(height: 90),
-
-            // Réponse (avec espace réservé fixe)
-            SizedBox(
-              height: 160, // réserve l’espace pour pinyin + traduction
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (showAnswer) ...[
-                    Text(
-                      currentChar!.pinyin,
-                      style: const TextStyle(
-                        fontSize: 38,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                    const SizedBox(height: 30),
-                    Text(
-                      currentChar!.translation,
-                      style: const TextStyle(
-                        fontSize: 38,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 90),
-
-            // Bouton
             SizedBox(
               width: 300,
               height: 80,
